@@ -48,7 +48,7 @@ namespace FriendlyExcel.FunctionalClasses
         }
         private static Type[] GetColumnTypes(ISheet sheet, int firstRowIndex)
         {
-            int index = firstRowIndex;
+            int index = sheet.FirstRowNum + firstRowIndex;
             IRow currentRow = sheet.GetRow(index++);
             Type[] columnTypes = [];
             do
@@ -120,14 +120,15 @@ namespace FriendlyExcel.FunctionalClasses
             }
             return table;
         }
-        private static DataTable FillTable(DataTable table, ISheet sheet, Type[] columnTypes, int startRowIndex)//TODO: Я остановился перед FillTable методом в написании тестов
+        private static DataTable FillTable(DataTable table, ISheet sheet, Type[] columnTypes, int startRowIndex)
         {
-            for (int i = startRowIndex; i < sheet.Count(); i++)
+            for (int i = sheet.FirstRowNum + startRowIndex; i <= sheet.LastRowNum; i++)
             {
                 DataRow tableRow = table.NewRow();
                 tableRow = ParseRow(sheet.GetRow(i), tableRow, columnTypes);
-                tableRow.AcceptChanges();
+                table.Rows.Add(tableRow);
             }
+            table.AcceptChanges();
             return table;
 
             static DataRow ParseRow(IRow row, DataRow resultRow, Type[] columnTypes)
@@ -137,7 +138,7 @@ namespace FriendlyExcel.FunctionalClasses
                     ICell cell = row.Cells[i];
                     resultRow[i] = GetCellValue(cell, columnTypes[i]);
                 }
-                return resultRow; //TODO:  Ну и это проверь, как работает, что-ли
+                return resultRow;
 
                 static object GetCellValue(ICell cell, Type type)
                 {

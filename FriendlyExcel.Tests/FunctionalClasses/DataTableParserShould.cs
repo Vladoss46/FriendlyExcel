@@ -219,6 +219,88 @@ namespace FriendlyExcel.Tests.FunctionalClasses
             Assert.That(table, Is.Not.Null);
 
         }
+        private static (int, Type)[] TEST_CELL_SOURCE =
+            [
+                (0,typeof(string)),
+                (1,typeof(int)),
+                (2,typeof(string)),
+                (3,typeof(double)),
+                (4,typeof(string)),
+            ];
+        [Test]
+        public void GetCellValueCorrectly([ValueSource(nameof(_test_paths))] string filePath, [ValueSource (nameof(TEST_CELL_SOURCE))] (int cellIndex, Type cellType) _1)
+        {
+            workbook = (IWorkbook)readMethodInfo.Invoke(null, [filePath])!;
+            sheet = workbook.GetSheetAt(1);
+            Assert.IsNotNull(sheet);
+            var row = sheet.GetRow(0);
+            var cell = row.GetCell(_1.cellIndex);
+
+
+            MethodInfo methodInfo = methodInfos.Single(x => x.Name == "<FillTable>g__GetCellValue|5_1")!;
+            Assert.IsNotNull(methodInfo);
+
+
+            var obj = methodInfo.Invoke(null, [cell, _1.cellType])!;
+            obj.Dump();
+            _1.cellType.Dump();
+            Assert.That(obj, Is.Not.Null);
+
+        }
+        [Test]
+        public void ParseRowCorrectly([ValueSource(nameof(_test_paths))]string filePath,[ValueSource(nameof(TEST_COLUMN_SOURCE))] (string[] columnNames, Type[] columnTypes) _)
+        {
+            workbook = (IWorkbook)readMethodInfo.Invoke(null, [filePath])!;
+            sheet = workbook.GetSheetAt(1);
+            Assert.IsNotNull(sheet);
+            var row = sheet.GetRow(0);
+
+            var table = (DataTable)methodInfos.Single(x => x.Name == "CreateDataTable")!.Invoke(null, [_.columnNames, _.columnTypes])!;
+            DataRow tableRow = table.NewRow();
+
+            MethodInfo methodInfo = methodInfos.Single(x => x.Name == "<FillTable>g__ParseRow|5_0")!;
+            Assert.IsNotNull(methodInfo);
+            tableRow = (DataRow)methodInfo.Invoke(null, [row,tableRow,_.columnTypes])!;
+            tableRow.Dump();
+            Assert.That(tableRow, Is.Not.Null);
+
+        }
+        [Test]
+        public void FillTableCorrectly([ValueSource(nameof(_test_paths))] string filePath, [ValueSource(nameof(TEST_COLUMN_TYPES_SHEET_AND_ROW_COMBINATIONS))] (int sheetIndex, int startRowIndex) _1, [ValueSource(nameof(TEST_COLUMN_SOURCE))] (string[] columnNames, Type[] columnTypes) _)
+        {
+            workbook = (IWorkbook)readMethodInfo.Invoke(null, [filePath])!;
+            sheet = workbook.GetSheetAt(_1.sheetIndex);
+            Assert.IsNotNull(sheet);
+            var table = (DataTable)methodInfos.Single(x => x.Name == "CreateDataTable")!.Invoke(null, [_.columnNames, _.columnTypes])!;
+            Assert.IsNotNull(table);
+
+            MethodInfo methodInfo = methodInfos.Single(x => x.Name == "FillTable")!;
+            Assert.IsNotNull(methodInfo);
+
+            table = (DataTable)methodInfo.Invoke(null, [table,sheet, _.columnTypes,_1.startRowIndex])!;
+            table.Dump();
+            Assert.That(table, Is.Not.Null);
+            table.Rows.Count.Dump();
+            Assert.That(table.Rows.Count, Is.EqualTo(sheet.PhysicalNumberOfRows - _1.startRowIndex));
+
+        }
+        [Test]
+        public void ParseCorrectly([ValueSource(nameof(_test_paths))] string filePath, [ValueSource(nameof(TEST_COLUMN_TYPES_SHEET_AND_ROW_COMBINATIONS))] (int sheetIndex, int startRowIndex) _1)
+        {
+            workbook = (IWorkbook)readMethodInfo.Invoke(null, [filePath])!;
+            sheet = workbook.GetSheetAt(_1.sheetIndex);
+            Assert.IsNotNull(sheet);
+
+            MethodInfo methodInfo = methodInfos.Single(x => x.Name == "Parse")!;
+            Assert.IsNotNull(methodInfo);
+
+            var table = (DataTable)methodInfo.Invoke(null, [sheet, _1.startRowIndex == 1? true : false])!;
+            table.Dump();
+            Assert.That(table, Is.Not.Null);
+            table.Rows.Count.Dump();
+            Assert.That(table.Rows.Count, Is.EqualTo(sheet.PhysicalNumberOfRows - _1.startRowIndex));
+
+        }
         [TearDown]
         public void TearDown()
         {

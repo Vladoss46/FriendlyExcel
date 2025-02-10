@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace FriendlyExcel.FunctionalClasses
 {
-    internal class DataTableReader
+    internal static class DataTableReader
     {
         public static IWorkbook Read(string filePath)
         {
