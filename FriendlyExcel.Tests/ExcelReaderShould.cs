@@ -39,7 +39,7 @@ namespace FriendlyExcel.Tests
         }
 
         [Test]
-        public void GetCorrectly([ValueSource(nameof(_test_paths))] string filePath, [Values(0,1)] int sheetCount, [Values(true)] bool useFirstRowAsColumnNames)
+        public void GetCorrectly([ValueSource(nameof(_test_paths))] string filePath, [Values(0, 1)] int sheetCount, [Values(true)] bool useFirstRowAsColumnNames)
         {
             MethodInfo methodInfo = methodInfos.Single(x => x.Name == "Get")!;
             Assert.IsNotNull(methodInfo);
@@ -47,6 +47,17 @@ namespace FriendlyExcel.Tests
             bool bookIsNotNull = table is not null;
             Assert.That(bookIsNotNull);
             table.Dump();
+        }
+
+        [Test]
+        public void GetBookCorrectly([ValueSource(nameof(_test_paths))] string filePaths, [Values(true, false)] bool useFirstRowAsColumnNames1, [Values(true, false)] bool useFirstRowAsColumnNames2)
+        {
+            MethodInfo methodInfo = methodInfos.Single(x => x.Name == "GetBook")!;
+            Assert.IsNotNull(methodInfo);
+            XLBook? book = (XLBook)methodInfo.Invoke(null, [filePaths, new List<bool> { useFirstRowAsColumnNames1, useFirstRowAsColumnNames2 }.ToArray()])!;
+            bool bookIsNotNull = book is not null;
+            Assert.That(bookIsNotNull);
+            book.Dump();
         }
 
         [Test]

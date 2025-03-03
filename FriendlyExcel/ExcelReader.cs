@@ -46,6 +46,7 @@ namespace FriendlyExcel
                 }
                 catch (Exception)
                 {
+                    workbook.Dispose();
                     throw;
                 }
                 book.Sheets.Add(table);
@@ -72,6 +73,7 @@ namespace FriendlyExcel
                 }
                 catch (Exception)
                 {
+                    workbook.Dispose();
                     throw;
                 }
                 book.Sheets.Add(table);
