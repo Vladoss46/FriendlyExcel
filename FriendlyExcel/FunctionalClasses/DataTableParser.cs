@@ -1,6 +1,8 @@
 ﻿// This project is licensed under the MIT License.
 // This file contains code from NPOI, which is licensed under the Apache License 2.0.
 
+using FriendlyExcel.Exceptions;
+using FriendlyExcel.Extensions;
 using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
@@ -25,11 +27,11 @@ namespace FriendlyExcel.FunctionalClasses
         }
         private static string[] GetColumnNames(ISheet sheet)
         {
-            IRow firstRow = sheet.GetRow(0) ?? throw new NullReferenceException("First row is empty");
+            IRow firstRow = sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
             List<string> columnNames = [];
             foreach (var cell in firstRow.Cells)
             {
-                string columnName = cell.StringCellValue;
+                string columnName = cell.GetValueAsString();
                 if (string.IsNullOrWhiteSpace(columnName))
                     throw new NullReferenceException($"ColumnName at {cell.Address.FormatAsString()} position is empty");//TODO: проверь, как FormatAsString работает
                 columnNames.Add(columnName);
@@ -38,7 +40,7 @@ namespace FriendlyExcel.FunctionalClasses
         }
         private static string[] GetBaseColumnNames(ISheet sheet)
         {
-            IRow firstRow = sheet.GetRow(0) ?? throw new NullReferenceException("First row is empty");
+            IRow firstRow =sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
             List<string> columnNames = [];
             foreach (var column in (sheet.GetRow(0).Cells.Select((_, index) => new { index })))
             {

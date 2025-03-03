@@ -1,4 +1,5 @@
-﻿using FriendlyExcel.Models;
+﻿using FriendlyExcel.Exceptions;
+using FriendlyExcel.Models;
 using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
@@ -21,15 +22,58 @@ namespace FriendlyExcel
             workbook.Dispose();
             return table;
         }
-
-        public static XLBook GetBook(string filePath, bool useFirstRowAsColumnNames = true)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="useFirstRowAsColumnNames">a list for bool values of every table</param>
+        /// <returns></returns>
+        public static XLBook GetBook(string filePath, params bool[] useFirstRowAsColumnNames)
         {
             using IWorkbook workbook = FunctionalClasses.DataTableReader.Read(filePath);
             XLBook book = new();
             for (int i = 0; i < workbook.NumberOfSheets; i++)
             {
                 var sheet = workbook.GetSheetAt(i);
-                DataTable table = FunctionalClasses.DataTableParser.Parse(sheet, useFirstRowAsColumnNames);
+                DataTable table;
+                try
+                {
+                    table = FunctionalClasses.DataTableParser.Parse(sheet, useFirstRowAsColumnNames[i]);
+                }
+                catch (EmptySheetException)
+                {
+                    table = new DataTable();
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+                book.Sheets.Add(table);
+            }
+            workbook.Dispose();
+            return book;
+        }
+
+        public static XLBook GetBookParamsConnected(string filePath, bool useFirstRowAsColumnNames)
+        {
+            using IWorkbook workbook = FunctionalClasses.DataTableReader.Read(filePath);
+            XLBook book = new();
+            for (int i = 0; i < workbook.NumberOfSheets; i++)
+            {
+                var sheet = workbook.GetSheetAt(i);
+                DataTable table;
+                try
+                {
+                    table = FunctionalClasses.DataTableParser.Parse(sheet, useFirstRowAsColumnNames);
+                }
+                catch (EmptySheetException)
+                {
+                    table = new DataTable();
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
                 book.Sheets.Add(table);
             }
             workbook.Dispose();
