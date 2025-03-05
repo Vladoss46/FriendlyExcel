@@ -39,11 +39,11 @@ namespace FriendlyExcel.Tests
         }
 
         [Test]
-        public void GetCorrectly([ValueSource(nameof(_test_paths))] string filePath, [Values(0, 1)] int sheetCount, [Values(true)] bool useFirstRowAsColumnNames)
+        public void GetCorrectly([ValueSource(nameof(_test_paths))] string filePath, [Values(0, 1)] int sheetIndex, [Values(true)] bool useFirstRowAsColumnNames)
         {
             MethodInfo methodInfo = methodInfos.Single(x => x.Name == "Get")!;
             Assert.IsNotNull(methodInfo);
-            DataTable? table = (DataTable)methodInfo.Invoke(null, [filePath, sheetCount, useFirstRowAsColumnNames])!;
+            DataTable? table = (DataTable)methodInfo.Invoke(null, [filePath, sheetIndex, useFirstRowAsColumnNames])!;
             bool bookIsNotNull = table is not null;
             Assert.That(bookIsNotNull);
             table.Dump();

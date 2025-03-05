@@ -3,6 +3,7 @@
 
 using FriendlyExcel.Exceptions;
 using FriendlyExcel.Extensions;
+using MathNet.Numerics;
 using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,19 @@ namespace FriendlyExcel.FunctionalClasses
             table = FillTable(table, sheet, columnTypes, startDataRowIndex);
             return table;
         }
+        public static DataTable Parse(ISheet sheet, Type[] columnTypes, bool useFirstRowAsColumnNames = true)
+        {
+            if (columnTypes.Length == 0)
+            {
+                throw new ArgumentException($"Length of {columnTypes} argument is 0");
+            }
+
+            string[] columnNames = useFirstRowAsColumnNames ? GetColumnNames(sheet) : GetBaseColumnNames(sheet);
+            int startDataRowIndex = useFirstRowAsColumnNames ? 1 : 0;
+            DataTable table = CreateDataTable(columnNames, columnTypes);
+            table = FillTable(table, sheet, columnTypes, startDataRowIndex);
+            return table;
+        }
         private static string[] GetColumnNames(ISheet sheet)
         {
             IRow firstRow = sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
@@ -40,7 +54,7 @@ namespace FriendlyExcel.FunctionalClasses
         }
         private static string[] GetBaseColumnNames(ISheet sheet)
         {
-            IRow firstRow =sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
+            IRow firstRow = sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
             List<string> columnNames = [];
             foreach (var column in (sheet.GetRow(0).Cells.Select((_, index) => new { index })))
             {
@@ -63,6 +77,8 @@ namespace FriendlyExcel.FunctionalClasses
                     if (type == typeof(double))
                     {
                         type = CheckDoubleType(cell.NumericCellValue.ToString());
+
+                        type = CheckDateTimeType(cell);
                     }
                     currentColumnTypes.Add(type);
                 }
@@ -89,6 +105,22 @@ namespace FriendlyExcel.FunctionalClasses
                 if (int.TryParse(stringValue, out _))
                 {
                     return typeof(int);
+                }
+                return typeof(double);
+            }
+            Type CheckDateTimeType(ICell cell)
+            {
+                if (DateUtil.IsCellDateFormatted(cell))
+                {
+                    double numericCallValue = cell.NumericCellValue;
+
+                    if (numericCallValue < 1.0d)
+                        return typeof(TimeOnly);
+
+                    if (double.IsInteger(numericCallValue))
+                        return typeof(DateOnly);
+
+                    return typeof(DateTime);
                 }
                 return typeof(double);
             }
@@ -150,6 +182,9 @@ namespace FriendlyExcel.FunctionalClasses
                         "Double" => cell.NumericCellValue,
                         "Int32" => Int32.Parse(cell.NumericCellValue.ToString()),
                         "Boolean" => cell.BooleanCellValue,
+                        "DateTime" => cell.DateCellValue!,
+                        "TimeOnly" => cell.TimeOnlyCellValue!,
+                        "DateOnly" => cell.DateOnlyCellValue!,
                         _ => throw new Exception($"Unknown type of a column - {type.Name}"),
                     };
                 }

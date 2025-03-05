@@ -33,6 +33,12 @@
     <None Update="test-data-sheets\test_several_sheets.xlsx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="test-data-time\test.xls">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="test-data-time\test.xlsx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="test-data\test - Копировать.xls">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
