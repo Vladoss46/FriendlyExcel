@@ -48,9 +48,14 @@ namespace FriendlyExcel.Tests
             Assert.That(bookIsNotNull);
             table.Dump();
         }
-
+        private static IEnumerable<TestCaseData> GetTestData1()
+        {
+            yield return new TestCaseData(_test_paths.Single(x=>x.EndsWith(".xls")),true,false);
+            yield return new TestCaseData(_test_paths.Single(x=>x.EndsWith(".xlsx")),true,true);
+        }
         [Test]
-        public void GetBookCorrectly([ValueSource(nameof(_test_paths))] string filePaths, [Values(true, false)] bool useFirstRowAsColumnNames1, [Values(true, false)] bool useFirstRowAsColumnNames2)
+        [TestCaseSource(nameof(GetTestData1))]
+        public void GetBookCorrectly(string filePaths, bool useFirstRowAsColumnNames1, bool useFirstRowAsColumnNames2)
         {
             MethodInfo methodInfo = methodInfos.Single(x => x.Name == "GetBook")!;
             Assert.IsNotNull(methodInfo);

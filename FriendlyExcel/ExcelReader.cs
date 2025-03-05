@@ -38,7 +38,7 @@ namespace FriendlyExcel
                 DataTable table;
                 try
                 {
-                    table = FunctionalClasses.DataTableParser.Parse(sheet, useFirstRowAsColumnNames[i]);
+                    table = FunctionalClasses.DataTableParser.Parse(sheet, useFirstRowAsColumnNames.Skip(i).FirstOrDefault());
                 }
                 catch (EmptySheetException)
                 {
