@@ -24,6 +24,25 @@ dotnet add reference path/to/FriendlyExcel/FriendlyExcel.csproj
 dotnet pack FriendlyExcel/FriendlyExcel.csproj -c Release -o artifacts/nuget
 ```
 
+### Publishing to nuget.org (Trusted Publishing)
+
+Releases are published from GitHub Actions with [NuGet Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) (no long-lived API key).
+
+1. On [nuget.org](https://www.nuget.org) → your profile → **Trusted Publishing** → add a policy:
+   - Repository Owner: `Vladoss46`
+   - Repository: `FriendlyExcel`
+   - Workflow File: `publish.yml` (file name only)
+   - Environment: leave empty
+2. In the GitHub repo → **Settings → Secrets → Actions**, add `NUGET_USER` = your nuget.org **username** (profile name, not email).
+3. Publish a version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Workflow [`.github/workflows/publish.yml`](.github/workflows/publish.yml) builds, tests, packs with that version, and pushes to nuget.org.
+
 ## Read Excel → DataTable
 
 ```csharp

@@ -1,0 +1,99 @@
+# Publishes FriendlyExcel to nuget.org via Trusted Publishing (OIDC).
+# No long-lived NUGET_API_KEY is required.
+#
+# One-time setup on nuget.org → Trusted Publishing → Add policy:
+#   Repository Owner : Vladoss46
+#   Repository       : FriendlyExcel
+#   Workflow File    : publish.yml
+#   Environment      : (leave empty)
+#
+# GitHub repo secret (optional but recommended):
+#   NUGET_USER = your nuget.org username (profile name, NOT email)
+#
+# Release: git tag v1.0.0 && git push origin v1.0.0
+
+name: Publish NuGet
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "true"
+  CONFIGURATION: Release
+
+jobs:
+  publish:
+    name: Build, pack & publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for NuGet Trusted Publishing (OIDC)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing version ${VERSION} (tag ${TAG})"
+
+      - name: Restore
+        run: dotnet restore FriendlyExcel.sln
+
+      - name: Build
+        run: >
+          dotnet build FriendlyExcel.sln
+          -c ${{ env.CONFIGURATION }}
+          --no-restore
+          /p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: >
+          dotnet test FriendlyExcel.sln
+          -c ${{ env.CONFIGURATION }}
+          --no-build
+
+      - name: Pack
+        run: >
+          dotnet pack FriendlyExcel/FriendlyExcel.csproj
+          -c ${{ env.CONFIGURATION }}
+          --no-build
+          -o artifacts/nuget
+          /p:Version=${{ steps.version.outputs.version }}
+          /p:PackageProjectUrl=https://github.com/${{ github.repository }}
+          /p:RepositoryUrl=https://github.com/${{ github.repository }}.git
+          /p:RepositoryType=git
+
+      - name: NuGet login (OIDC → temporary API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          # nuget.org profile username, not email
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to nuget.org
+        run: >
+          dotnet nuget push artifacts/nuget/*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Upload packaged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/nuget/*.nupkg
+            artifacts/nuget/*.snupkg
+          retention-days: 30
