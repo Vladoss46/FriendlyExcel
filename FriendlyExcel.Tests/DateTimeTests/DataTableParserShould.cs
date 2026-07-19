@@ -4,7 +4,7 @@ namespace FriendlyExcel.Tests.DateTimeTests
 {
     internal class DataTableParserShould
     {
-        private static readonly string TestDataPath = ".\\test-data-time";
+        private static readonly string TestDataPath = Path.Combine(AppContext.BaseDirectory, "test-data-time");
         private static readonly string[] TestPaths = Directory.GetFiles(TestDataPath);
 
         [Test]

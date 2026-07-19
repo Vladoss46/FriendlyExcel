@@ -8,7 +8,7 @@ namespace FriendlyExcel.Tests.FunctionalClasses
 {
     internal class DataTableReaderShould
     {
-        private static readonly string TestDataPath = ".\\test-data";
+        private static readonly string TestDataPath = Path.Combine(AppContext.BaseDirectory, "test-data");
         private static readonly string[] TestPaths = Directory.GetFiles(TestDataPath);
 
         [Test]

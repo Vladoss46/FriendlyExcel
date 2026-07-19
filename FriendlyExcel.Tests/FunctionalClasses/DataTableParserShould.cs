@@ -11,7 +11,7 @@ namespace FriendlyExcel.Tests.FunctionalClasses
     internal class DataTableParserShould
     {
         private IWorkbook? _workbook;
-        private static readonly string TestDataPath = ".\\test-data";
+        private static readonly string TestDataPath = Path.Combine(AppContext.BaseDirectory, "test-data");
         private static readonly string[] TestPaths = Directory.GetFiles(TestDataPath);
 
         private static readonly string[] TestColumnNames =

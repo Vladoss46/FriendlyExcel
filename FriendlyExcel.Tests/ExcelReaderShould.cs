@@ -8,7 +8,7 @@ namespace FriendlyExcel.Tests
 {
     internal class ExcelReaderShould
     {
-        private static readonly string TestDataPath = ".\\test-data-sheets";
+        private static readonly string TestDataPath = Path.Combine(AppContext.BaseDirectory, "test-data-sheets");
         private static readonly string[] TestPaths = Directory.GetFiles(TestDataPath);
 
         [Test]
@@ -23,8 +23,8 @@ namespace FriendlyExcel.Tests
 
         private static IEnumerable<TestCaseData> GetBookCases()
         {
-            yield return new TestCaseData(TestPaths.Single(x => x.EndsWith(".xls")), true, false);
-            yield return new TestCaseData(TestPaths.Single(x => x.EndsWith(".xlsx")), true, true);
+            yield return new TestCaseData(TestPaths.Single(x => x.EndsWith(".xls", StringComparison.OrdinalIgnoreCase)), true, false);
+            yield return new TestCaseData(TestPaths.Single(x => x.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)), true, true);
         }
 
         [Test]
