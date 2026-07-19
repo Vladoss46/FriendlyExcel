@@ -1,1 +1,117 @@
 # FriendlyExcel
+
+[![CI](https://github.com/vladichec8/FriendlyExcel/actions/workflows/ci.yml/badge.svg)](https://github.com/vladichec8/FriendlyExcel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
+
+.NET 8 library for reading and writing Excel files (`.xls` / `.xlsx`) through `System.Data.DataTable`.
+
+Built on [NPOI](https://github.com/nissl-lab/npoi).
+
+## Install
+
+Target framework: **net8.0**.
+
+```bash
+# from a local pack
+dotnet add package FriendlyExcel --source path/to/artifacts/nuget
+
+# or project reference while developing
+dotnet add reference path/to/FriendlyExcel/FriendlyExcel.csproj
+```
+
+```bash
+# produce nupkg locally
+dotnet pack FriendlyExcel/FriendlyExcel.csproj -c Release -o artifacts/nuget
+```
+
+## Read Excel → DataTable
+
+```csharp
+using FriendlyExcel;
+using FriendlyExcel.Models;
+using System.Data;
+
+// Path + index / name
+DataTable table = ExcelReader.Get("data.xlsx");
+DataTable byIndex = ExcelReader.Get("data.xlsx", sheetIndex: 1);
+DataTable byName = ExcelReader.Get("data.xlsx", "Orders");
+
+// Options object
+DataTable typed = ExcelReader.Get("data.xlsx", new ExcelReadOptions
+{
+    SheetName = "Orders",
+    UseFirstRowAsColumnNames = true,
+    ColumnTypes = [typeof(string), typeof(int), typeof(double)],
+});
+
+// Stream (web uploads, blobs) — Format or FileName required
+await using Stream upload = file.OpenReadStream();
+DataTable fromUpload = ExcelReader.Get(upload, new ExcelReadOptions
+{
+    FileName = file.FileName, // e.g. "report.xlsx"
+    SheetName = "Sheet1",
+});
+
+// Whole workbook
+XLBook book = ExcelReader.GetBook("data.xlsx", true, true);
+XLBook fromStream = ExcelReader.GetBook(upload, new ExcelReadBookOptions
+{
+    Format = ExcelFormat.Xlsx,
+    UseFirstRowAsColumnNames = true,
+});
+```
+
+Column types are inferred when not provided: `string`, `int`, `double`, `bool`, `DateTime`, `DateOnly`, `TimeOnly`.  
+`DataTable.TableName` is set from the worksheet name. Empty sheets become empty tables when reading a whole book.
+
+## Write DataTable → Excel
+
+```csharp
+using FriendlyExcel;
+using FriendlyExcel.Models;
+using System.Data;
+
+DataTable table = new("People");
+table.Columns.Add("Name", typeof(string));
+table.Columns.Add("Age", typeof(int));
+table.Rows.Add("Alice", 30);
+
+// Path — format from extension
+ExcelWriter.Save("out.xlsx", table);
+
+// Stream — Format required
+using MemoryStream ms = new();
+ExcelWriter.Save(ms, table, ExcelFormat.Xlsx);
+ExcelWriter.SaveBook(ms, book, new ExcelWriteOptions
+{
+    Format = ExcelFormat.Xlsx,
+    WriteColumnNames = true,
+});
+```
+
+Sheet names come from `DataTable.TableName` when set.
+
+## Public API
+
+| Type | Role |
+|------|------|
+| `ExcelReader` | Read path/stream → `DataTable` / `XLBook` |
+| `ExcelWriter` | Write `DataTable` / `XLBook` → path/stream |
+| `ExcelReadOptions` / `ExcelReadBookOptions` | Sheet index/name, headers, types, format |
+| `ExcelWriteOptions` | Headers, format |
+| `ExcelFormat` | `Xls` / `Xlsx` |
+| `XLBook` | List of sheets as `DataTable`s |
+| `EmptySheetException` | Thrown for empty worksheets (single-sheet read) |
+
+## Build & test
+
+```bash
+dotnet build
+dotnet test
+```
+
+## License
+
+FriendlyExcel is licensed under the [MIT License](LICENSE.txt).
+
+Third-party dependencies (NPOI and its transitive packages) are listed in [NOTICE](NOTICE). NPOI is Apache-2.0; when you redistribute binaries that include NPOI, follow Apache-2.0 attribution requirements for that dependency.

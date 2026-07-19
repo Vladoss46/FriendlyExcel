@@ -3,19 +3,12 @@
 
 using FriendlyExcel.Exceptions;
 using FriendlyExcel.Extensions;
-using MathNet.Numerics;
 using NPOI.SS.UserModel;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FriendlyExcel.FunctionalClasses
 {
-    internal class DataTableParser
+    internal static class DataTableParser
     {
         public static DataTable Parse(ISheet sheet, bool useFirstRowAsColumnNames = true)
         {
@@ -23,172 +16,201 @@ namespace FriendlyExcel.FunctionalClasses
             int startDataRowIndex = useFirstRowAsColumnNames ? 1 : 0;
             Type[] columnTypes = GetColumnTypes(sheet, startDataRowIndex);
             DataTable table = CreateDataTable(columnNames, columnTypes);
-            table = FillTable(table, sheet, columnTypes, startDataRowIndex);
-            return table;
+            table.TableName = sheet.SheetName;
+            return FillTable(table, sheet, columnTypes, startDataRowIndex);
         }
+
         public static DataTable Parse(ISheet sheet, Type[] columnTypes, bool useFirstRowAsColumnNames = true)
         {
             if (columnTypes.Length == 0)
-            {
-                throw new ArgumentException($"Length of {columnTypes} argument is 0");
-            }
+                throw new ArgumentException("columnTypes must contain at least one type.", nameof(columnTypes));
 
             string[] columnNames = useFirstRowAsColumnNames ? GetColumnNames(sheet) : GetBaseColumnNames(sheet);
             int startDataRowIndex = useFirstRowAsColumnNames ? 1 : 0;
             DataTable table = CreateDataTable(columnNames, columnTypes);
-            table = FillTable(table, sheet, columnTypes, startDataRowIndex);
-            return table;
+            table.TableName = sheet.SheetName;
+            return FillTable(table, sheet, columnTypes, startDataRowIndex);
         }
-        private static string[] GetColumnNames(ISheet sheet)
+
+        internal static string[] GetColumnNames(ISheet sheet)
         {
             IRow firstRow = sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
             List<string> columnNames = [];
-            foreach (var cell in firstRow.Cells)
+            foreach (ICell cell in firstRow.Cells)
             {
                 string columnName = cell.GetValueAsString();
                 if (string.IsNullOrWhiteSpace(columnName))
-                    throw new NullReferenceException($"ColumnName at {cell.Address.FormatAsString()} position is empty");//TODO: проверь, как FormatAsString работает
+                    throw new ArgumentException($"ColumnName at {cell.Address.FormatAsString()} position is empty");
                 columnNames.Add(columnName);
             }
             return [.. columnNames];
         }
-        private static string[] GetBaseColumnNames(ISheet sheet)
+
+        internal static string[] GetBaseColumnNames(ISheet sheet)
         {
             IRow firstRow = sheet.GetRow(sheet.FirstRowNum) ?? throw new EmptySheetException("Not found any data at the sheet");
             List<string> columnNames = [];
-            foreach (var column in (sheet.GetRow(0).Cells.Select((_, index) => new { index })))
-            {
-                columnNames.Add($"Column{column.index + 1}");
-            }
+            for (int index = 0; index < firstRow.Cells.Count; index++)
+                columnNames.Add($"Column{index + 1}");
             return [.. columnNames];
         }
-        private static Type[] GetColumnTypes(ISheet sheet, int firstRowIndex)
+
+        internal static Type[] GetColumnTypes(ISheet sheet, int firstRowIndex)
         {
             int index = sheet.FirstRowNum + firstRowIndex;
-            IRow currentRow = sheet.GetRow(index++);
+            IRow? currentRow = sheet.GetRow(index++);
+            if (currentRow is null)
+                throw new EmptySheetException("Not found any data at the sheet");
+
             Type[] columnTypes = [];
             do
             {
                 List<Type> currentColumnTypes = [];
+                foreach (ICell cell in currentRow.Cells)
+                    currentColumnTypes.Add(ResolveCellType(cell));
 
-                foreach (var cell in currentRow.Cells)
-                {
-                    Type type = GetTypeOfCell(cell.CellType);
-                    if (type == typeof(double))
-                    {
-                        type = CheckDoubleType(cell.NumericCellValue.ToString());
-
-                        type = CheckDateTimeType(cell);
-                    }
-                    currentColumnTypes.Add(type);
-                }
-                columnTypes = CompareAndSwitch(currentColumnTypes.ToArray(), columnTypes.ToArray());
-
-
+                columnTypes = CompareAndSwitch([.. currentColumnTypes], columnTypes);
                 currentRow = sheet.GetRow(index++);
             }
             while (currentRow is not null);
+
             return columnTypes;
-
-            Type GetTypeOfCell(CellType cellType)
-            {
-                switch (cellType)
-                {
-                    default: return typeof(string);
-                    case CellType.Boolean: return typeof(bool);
-                    case CellType.String: return typeof(string);
-                    case CellType.Numeric: return typeof(double);
-                }
-            }
-            Type CheckDoubleType(string stringValue)
-            {
-                if (int.TryParse(stringValue, out _))
-                {
-                    return typeof(int);
-                }
-                return typeof(double);
-            }
-            Type CheckDateTimeType(ICell cell)
-            {
-                if (DateUtil.IsCellDateFormatted(cell))
-                {
-                    double numericCallValue = cell.NumericCellValue;
-
-                    if (numericCallValue < 1.0d)
-                        return typeof(TimeOnly);
-
-                    if (double.IsInteger(numericCallValue))
-                        return typeof(DateOnly);
-
-                    return typeof(DateTime);
-                }
-                return typeof(double);
-            }
-            Type[] CompareAndSwitch(Type[] fromArray, Type[] toArray)
-            {
-                //i try to find 
-                if (toArray.Length == 0) return fromArray;
-
-                Type[] toArray_Final = toArray;
-                foreach (var item in fromArray.Select((value, index) => new { value, index }))
-                {
-                    if (item.value == typeof(string) &&
-                        toArray_Final[item.index] != typeof(string))
-                    {
-                        toArray_Final[item.index] = item.value;
-                    }
-                }
-                return toArray_Final;
-            }
         }
-        private static DataTable CreateDataTable(string[] columnNames, Type[] columnTypes)
+
+        internal static Type GetTypeOfCell(CellType cellType)
         {
-            DataTable table = new();
+            return cellType switch
+            {
+                CellType.Boolean => typeof(bool),
+                CellType.String => typeof(string),
+                CellType.Numeric => typeof(double),
+                _ => typeof(string),
+            };
+        }
+
+        internal static Type CheckDoubleType(double value)
+        {
+            if (!double.IsNaN(value)
+                && !double.IsInfinity(value)
+                && value >= int.MinValue
+                && value <= int.MaxValue
+                && double.IsInteger(value))
+            {
+                return typeof(int);
+            }
+
+            return typeof(double);
+        }
+
+        internal static Type CheckDateTimeType(ICell cell)
+        {
+            if (!DateUtil.IsCellDateFormatted(cell))
+                return typeof(double);
+
+            double numericCellValue = cell.NumericCellValue;
+
+            if (numericCellValue < 1.0d)
+                return typeof(TimeOnly);
+
+            if (double.IsInteger(numericCellValue))
+                return typeof(DateOnly);
+
+            return typeof(DateTime);
+        }
+
+        internal static Type[] CompareAndSwitch(Type[] fromArray, Type[] toArray)
+        {
+            if (toArray.Length == 0)
+                return fromArray;
+
+            Type[] result = [.. toArray];
+            for (int index = 0; index < fromArray.Length && index < result.Length; index++)
+            {
+                Type current = fromArray[index];
+                Type accumulated = result[index];
+
+                if (current == typeof(string) || accumulated == typeof(string))
+                {
+                    result[index] = typeof(string);
+                    continue;
+                }
+
+                if ((current == typeof(double) && accumulated == typeof(int))
+                    || (current == typeof(int) && accumulated == typeof(double)))
+                {
+                    result[index] = typeof(double);
+                }
+            }
+
+            return result;
+        }
+
+        internal static DataTable CreateDataTable(string[] columnNames, Type[] columnTypes)
+        {
             if (columnNames.Length != columnTypes.Length)
-            {
-                throw new ArgumentException("Column names count doesn't compare to column types count. Send this error to author and show the case");
-            }
+                throw new ArgumentException("Column names count doesn't match column types count.");
+
+            DataTable table = new();
             for (int i = 0; i < columnNames.Length; i++)
-            {
                 table.Columns.Add(columnNames[i], columnTypes[i]);
-            }
             return table;
         }
-        private static DataTable FillTable(DataTable table, ISheet sheet, Type[] columnTypes, int startRowIndex)
+
+        internal static DataTable FillTable(DataTable table, ISheet sheet, Type[] columnTypes, int startRowIndex)
         {
             for (int i = sheet.FirstRowNum + startRowIndex; i <= sheet.LastRowNum; i++)
             {
+                IRow? row = sheet.GetRow(i);
+                if (row is null)
+                    continue;
+
                 DataRow tableRow = table.NewRow();
-                tableRow = ParseRow(sheet.GetRow(i), tableRow, columnTypes);
+                ParseRow(row, tableRow, columnTypes);
                 table.Rows.Add(tableRow);
             }
+
             table.AcceptChanges();
             return table;
+        }
 
-            static DataRow ParseRow(IRow row, DataRow resultRow, Type[] columnTypes)
+        internal static DataRow ParseRow(IRow row, DataRow resultRow, Type[] columnTypes)
+        {
+            for (int i = 0; i < row.Cells.Count && i < columnTypes.Length; i++)
             {
-                for (int i = 0; i < row.Cells.Count; i++)
-                {
-                    ICell cell = row.Cells[i];
-                    resultRow[i] = GetCellValue(cell, columnTypes[i]);
-                }
-                return resultRow;
-
-                static object GetCellValue(ICell cell, Type type)
-                {
-                    return type.Name switch
-                    {
-                        "String" => cell.StringCellValue,
-                        "Double" => cell.NumericCellValue,
-                        "Int32" => Int32.Parse(cell.NumericCellValue.ToString()),
-                        "Boolean" => cell.BooleanCellValue,
-                        "DateTime" => cell.DateCellValue!,
-                        "TimeOnly" => cell.TimeOnlyCellValue!,
-                        "DateOnly" => cell.DateOnlyCellValue!,
-                        _ => throw new Exception($"Unknown type of a column - {type.Name}"),
-                    };
-                }
+                ICell cell = row.Cells[i];
+                resultRow[i] = GetCellValue(cell, columnTypes[i]);
             }
+            return resultRow;
+        }
+
+        internal static object GetCellValue(ICell cell, Type type)
+        {
+            if (cell.CellType == CellType.Blank)
+                return DBNull.Value;
+
+            return type.Name switch
+            {
+                nameof(String) => cell.GetValueAsString(),
+                nameof(Double) => cell.NumericCellValue,
+                nameof(Int32) => Convert.ToInt32(cell.NumericCellValue),
+                nameof(Boolean) => cell.BooleanCellValue,
+                nameof(DateTime) => cell.DateCellValue!,
+                nameof(TimeOnly) => cell.TimeOnlyCellValue!,
+                nameof(DateOnly) => cell.DateOnlyCellValue!,
+                _ => throw new NotSupportedException($"Unknown type of a column - {type.Name}"),
+            };
+        }
+
+        private static Type ResolveCellType(ICell cell)
+        {
+            Type type = GetTypeOfCell(cell.CellType);
+            if (type != typeof(double))
+                return type;
+
+            if (DateUtil.IsCellDateFormatted(cell))
+                return CheckDateTimeType(cell);
+
+            return CheckDoubleType(cell.NumericCellValue);
         }
     }
 }

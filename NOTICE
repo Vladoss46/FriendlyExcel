@@ -1,0 +1,44 @@
+FriendlyExcel
+Copyright (c) 2025 Vladislav Volostnov (Владислав Волостнов)
+
+This product is licensed under the MIT License. See LICENSE.txt.
+
+-------------------------------------------------------------------------------
+Third-party software notices
+-------------------------------------------------------------------------------
+
+This software depends on NuGet packages. Licenses below are as declared by the
+package authors (and/or their upstream projects). Only runtime dependencies of
+the FriendlyExcel library are listed here.
+
+NPOI (Apache License 2.0)
+  https://github.com/nissl-lab/npoi
+  https://www.nuget.org/packages/NPOI
+
+  NPOI is a .NET port of Apache POI. When you redistribute FriendlyExcel together
+  with NPOI binaries, you must comply with the Apache License 2.0, including
+  retaining required copyright and NOTICE attributions from that project.
+
+Transitive runtime dependencies pulled in by NPOI 2.7.2 (typical resolution):
+
+  BouncyCastle.Cryptography          MIT
+  Enums.NET                          MIT
+  ExtendedNumerics.BigDecimal        MIT
+  MathNet.Numerics.Signed            MIT
+  Microsoft.IO.RecyclableMemoryStream MIT
+  SharpZipLib                        MIT
+  SixLabors.Fonts                    Apache-2.0 (as declared on NuGet for 1.0.1)
+  SixLabors.ImageSharp               Apache-2.0 on NuGet for 2.1.9;
+                                     Six Labors also publishes a Split License
+                                     for ImageSharp. For open-source consumers and
+                                     for use as a transitive dependency, the
+                                     Apache-2.0 path generally applies.
+                                     See: https://sixlabors.com/posts/license-changes/
+  System.Security.Cryptography.*     .NET / Microsoft licenses
+
+Test-only packages used by FriendlyExcel.Tests (NUnit, Dumpify, coverlet, etc.)
+are not redistributed with the library and are omitted from this notice.
+
+Full license texts for third-party packages are available from NuGet.org and the
+respective project repositories. This NOTICE is for attribution and does not
+modify the MIT license of FriendlyExcel itself.

@@ -4,11 +4,6 @@
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FriendlyExcel.FunctionalClasses
 {
@@ -16,19 +11,24 @@ namespace FriendlyExcel.FunctionalClasses
     {
         public static IWorkbook Read(string filePath)
         {
-            FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-                IWorkbook workbook;
+            ExcelFormat format = Internal.ExcelFormatResolver.FromPathOrFileName(filePath);
+            using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            return Read(fs, format);
+        }
 
-                // Проверяем расширение файла и выбираем нужный класс
-                if (filePath.EndsWith(".xls"))
-                {
-                    workbook = new HSSFWorkbook(fs); // Для старых файлов Excel (.xls)
-                }
-                else
-                {
-                    workbook = new XSSFWorkbook(fs); // Для новых файлов Excel (.xlsx)
-                }
-            return workbook;
+        public static IWorkbook Read(Stream stream, ExcelFormat format)
+        {
+            ArgumentNullException.ThrowIfNull(stream);
+
+            if (!stream.CanRead)
+                throw new ArgumentException("Stream must be readable.", nameof(stream));
+
+            return format switch
+            {
+                ExcelFormat.Xls => new HSSFWorkbook(stream),
+                ExcelFormat.Xlsx => new XSSFWorkbook(stream),
+                _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Unsupported Excel format."),
+            };
         }
     }
 }

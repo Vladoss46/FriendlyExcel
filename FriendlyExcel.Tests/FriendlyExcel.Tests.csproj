@@ -39,9 +39,6 @@
     <None Update="test-data-time\test.xlsx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="test-data\test - Копировать.xls">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="test-data\test.xls">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

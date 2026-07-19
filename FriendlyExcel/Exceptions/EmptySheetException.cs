@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FriendlyExcel.Exceptions
+﻿namespace FriendlyExcel.Exceptions
 {
-    internal class EmptySheetException : NullReferenceException
+    /// <summary>
+    /// Thrown when a worksheet contains no usable rows.
+    /// </summary>
+    public class EmptySheetException : Exception
     {
         public EmptySheetException(string? message) : base(message)
         {
