@@ -34,14 +34,19 @@ Releases are published from GitHub Actions with [NuGet Trusted Publishing](https
    - Workflow File: `publish.yml` (file name only)
    - Environment: leave empty
 2. In the GitHub repo → **Settings → Secrets → Actions**, add `NUGET_USER` = your nuget.org **username** (profile name, not email).
-3. Publish a version tag:
+3. Publish (either way):
+
+**A. Tag (recommended)**
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-Workflow [`.github/workflows/publish.yml`](.github/workflows/publish.yml) builds, tests, packs with that version, and pushes to nuget.org.
+**B. Manual run in GitHub UI**  
+Actions → **Publish NuGet** → **Run workflow** → version `1.0.0`.
+
+Workflow [`.github/workflows/publish.yml`](.github/workflows/publish.yml) builds, tests, packs, and pushes to nuget.org.
 
 ## Read Excel → DataTable
 
