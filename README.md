@@ -1,6 +1,6 @@
 # FriendlyExcel
 
-[![CI](https://github.com/vladichec8/FriendlyExcel/actions/workflows/ci.yml/badge.svg)](https://github.com/vladichec8/FriendlyExcel/actions/workflows/ci.yml)
+[![CI](https://github.com/Vladoss46/FriendlyExcel/actions/workflows/ci.yml/badge.svg)](https://github.com/Vladoss46/FriendlyExcel/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
 
 .NET 8 library for reading and writing Excel files (`.xls` / `.xlsx`) through `System.Data.DataTable`.

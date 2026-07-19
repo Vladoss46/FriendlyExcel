@@ -22,8 +22,8 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageTags>excel;xlsx;xls;datatable;npoi;spreadsheet;import;export</PackageTags>
     <!-- Overridden in GitHub Actions pack with github.repository -->
-    <PackageProjectUrl>https://github.com/vladichec8/FriendlyExcel</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/vladichec8/FriendlyExcel.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Vladoss46/FriendlyExcel</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Vladoss46/FriendlyExcel.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
