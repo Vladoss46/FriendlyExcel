@@ -35,22 +35,29 @@ DataTable typed = ExcelReader.Get("data.xlsx", new ExcelReadOptions
     ColumnTypes = [typeof(string), typeof(int), typeof(double)],
 });
 
-// Stream (web uploads, blobs) — Format or FileName required
+// Stream (web uploads, blobs) — format is NOT detected from bytes.
+// You must pass Format and/or FileName (extension .xls / .xlsx).
 await using Stream upload = file.OpenReadStream();
+
 DataTable fromUpload = ExcelReader.Get(upload, new ExcelReadOptions
 {
-    FileName = file.FileName, // e.g. "report.xlsx"
+    FileName = file.FileName, // e.g. "report.xlsx" → format from extension
     SheetName = "Sheet1",
 });
+
+// Same idea with an explicit format:
+DataTable fromUpload2 = ExcelReader.Get(upload, ExcelFormat.Xlsx);
 
 // Whole workbook
 XLBook book = ExcelReader.GetBook("data.xlsx", true, true);
 XLBook fromStream = ExcelReader.GetBook(upload, new ExcelReadBookOptions
 {
-    Format = ExcelFormat.Xlsx,
+    Format = ExcelFormat.Xlsx, // required when there is no file name
     UseFirstRowAsColumnNames = true,
 });
 ```
+
+**Path vs stream:** for a file path, `.xls` / `.xlsx` is taken from the path. For a `Stream`, set `ExcelFormat` or `FileName` with that extension — the library does not sniff the stream contents.
 
 Column types are inferred when not provided: `string`, `int`, `double`, `bool`, `DateTime`, `DateOnly`, `TimeOnly`.  
 `DataTable.TableName` is set from the worksheet name. Empty sheets become empty tables when reading a whole book.
@@ -78,10 +85,10 @@ orders.Columns.Add("Id", typeof(int));
 orders.Columns.Add("Total", typeof(double));
 orders.Rows.Add(1, 99.5);
 
-// Path — format from extension
+// Path — format from extension (.xlsx / .xls)
 ExcelWriter.Save("out.xlsx", people);
 
-// Stream — Format required
+// Stream — Format required (not inferred from stream bytes)
 using MemoryStream ms = new();
 ExcelWriter.Save(ms, people, ExcelFormat.Xlsx);
 
@@ -116,9 +123,12 @@ List<Employee> people = ExcelReader.Get<Employee>("staff.xlsx");
 ExcelWriter.Save("staff-out.xlsx", people);
 
 using MemoryStream ms = new();
-ExcelWriter.Save(ms, people, ExcelFormat.Xlsx);
+ExcelWriter.Save(ms, people, ExcelFormat.Xlsx); // Format required for streams
 ms.Position = 0;
-List<Employee> again = ExcelReader.Get<Employee>(ms, new ExcelReadOptions { Format = ExcelFormat.Xlsx });
+List<Employee> again = ExcelReader.Get<Employee>(ms, new ExcelReadOptions
+{
+    Format = ExcelFormat.Xlsx, // or FileName = "staff.xlsx"
+});
 ```
 
 ## Public API
