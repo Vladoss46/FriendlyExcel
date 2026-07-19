@@ -71,17 +71,25 @@ using FriendlyExcel;
 using FriendlyExcel.Models;
 using System.Data;
 
-DataTable table = new("People");
-table.Columns.Add("Name", typeof(string));
-table.Columns.Add("Age", typeof(int));
-table.Rows.Add("Alice", 30);
+DataTable people = new("People");
+people.Columns.Add("Name", typeof(string));
+people.Columns.Add("Age", typeof(int));
+people.Rows.Add("Alice", 30);
+
+DataTable orders = new("Orders");
+orders.Columns.Add("Id", typeof(int));
+orders.Columns.Add("Total", typeof(double));
+orders.Rows.Add(1, 99.5);
 
 // Path — format from extension
-ExcelWriter.Save("out.xlsx", table);
+ExcelWriter.Save("out.xlsx", people);
 
 // Stream — Format required
 using MemoryStream ms = new();
-ExcelWriter.Save(ms, table, ExcelFormat.Xlsx);
+ExcelWriter.Save(ms, people, ExcelFormat.Xlsx);
+
+XLBook book = new([people, orders]);
+ms.SetLength(0);
 ExcelWriter.SaveBook(ms, book, new ExcelWriteOptions
 {
     Format = ExcelFormat.Xlsx,
