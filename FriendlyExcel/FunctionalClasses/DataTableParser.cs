@@ -3,8 +3,10 @@
 
 using FriendlyExcel.Exceptions;
 using FriendlyExcel.Extensions;
+using FriendlyExcel.Internal;
 using NPOI.SS.UserModel;
 using System.Data;
+using System.Globalization;
 
 namespace FriendlyExcel.FunctionalClasses
 {
@@ -84,6 +86,7 @@ namespace FriendlyExcel.FunctionalClasses
                 CellType.Boolean => typeof(bool),
                 CellType.String => typeof(string),
                 CellType.Numeric => typeof(double),
+                CellType.Formula => typeof(string),
                 _ => typeof(string),
             };
         }
@@ -185,14 +188,15 @@ namespace FriendlyExcel.FunctionalClasses
 
         internal static object GetCellValue(ICell cell, Type type)
         {
-            if (cell.CellType == CellType.Blank)
+            CellType effectiveType = GetEffectiveCellType(cell);
+            if (effectiveType == CellType.Blank)
                 return DBNull.Value;
 
             return type.Name switch
             {
                 nameof(String) => cell.GetValueAsString(),
-                nameof(Double) => cell.NumericCellValue,
-                nameof(Int32) => Convert.ToInt32(cell.NumericCellValue),
+                nameof(Double) => ReadAsDouble(cell, effectiveType),
+                nameof(Int32) => ReadAsInt32(cell, effectiveType),
                 nameof(Boolean) => cell.BooleanCellValue,
                 nameof(DateTime) => cell.DateCellValue!,
                 nameof(TimeOnly) => cell.TimeOnlyCellValue!,
@@ -203,7 +207,18 @@ namespace FriendlyExcel.FunctionalClasses
 
         private static Type ResolveCellType(ICell cell)
         {
-            Type type = GetTypeOfCell(cell.CellType);
+            CellType effectiveType = GetEffectiveCellType(cell);
+
+            // Textual numbers from Russian Excel often look like "12,5"
+            if (effectiveType == CellType.String)
+            {
+                string text = cell.StringCellValue;
+                if (FlexibleNumberParser.TryParseDouble(text, out double parsed))
+                    return CheckDoubleType(parsed);
+                return typeof(string);
+            }
+
+            Type type = GetTypeOfCell(effectiveType);
             if (type != typeof(double))
                 return type;
 
@@ -211,6 +226,43 @@ namespace FriendlyExcel.FunctionalClasses
                 return CheckDateTimeType(cell);
 
             return CheckDoubleType(cell.NumericCellValue);
+        }
+
+        private static double ReadAsDouble(ICell cell, CellType effectiveType)
+        {
+            if (effectiveType is CellType.Numeric or CellType.Formula)
+                return cell.NumericCellValue;
+
+            if (effectiveType == CellType.String
+                && FlexibleNumberParser.TryParseDouble(cell.StringCellValue, out double parsed))
+            {
+                return parsed;
+            }
+
+            throw new InvalidCastException(
+                $"Cannot read cell {cell.Address} as Double (type {effectiveType}, text '{cell.GetValueAsString()}').");
+        }
+
+        private static int ReadAsInt32(ICell cell, CellType effectiveType)
+        {
+            if (effectiveType is CellType.Numeric or CellType.Formula)
+                return Convert.ToInt32(cell.NumericCellValue, CultureInfo.InvariantCulture);
+
+            if (effectiveType == CellType.String
+                && FlexibleNumberParser.TryParseInt32(cell.StringCellValue, out int parsed))
+            {
+                return parsed;
+            }
+
+            throw new InvalidCastException(
+                $"Cannot read cell {cell.Address} as Int32 (type {effectiveType}, text '{cell.GetValueAsString()}').");
+        }
+
+        private static CellType GetEffectiveCellType(ICell cell)
+        {
+            return cell.CellType == CellType.Formula
+                ? cell.CachedFormulaResultType
+                : cell.CellType;
         }
     }
 }

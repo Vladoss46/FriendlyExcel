@@ -64,6 +64,12 @@ XLBook fromStream = ExcelReader.GetBook(upload, new ExcelReadBookOptions
 Column types are inferred when not provided: `string`, `int`, `double`, `bool`, `DateTime`, `DateOnly`, `TimeOnly`.  
 `DataTable.TableName` is set from the worksheet name. Empty sheets become empty tables when reading a whole book.
 
+Unicode text (including Russian / Cyrillic) in sheet names, headers, and cells is preserved.
+
+**Numbers and Russian Excel:** in the Russian UI the decimal separator is a **comma** (`12,5`).  
+Inside the file, real numeric cells are still binary doubles (locale-agnostic).  
+Text cells like `"12,5"` / `"12.5"` are parsed flexibly (comma or point) into `int`/`double` when the column is numeric — without the InvariantCulture pitfall where `"12,5"` becomes `125`.
+
 ## Write DataTable → Excel
 
 ```csharp

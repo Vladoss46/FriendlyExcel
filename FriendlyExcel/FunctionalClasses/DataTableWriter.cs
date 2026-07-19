@@ -6,6 +6,7 @@ using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Data;
+using System.Globalization;
 
 namespace FriendlyExcel.FunctionalClasses
 {
@@ -125,25 +126,25 @@ namespace FriendlyExcel.FunctionalClasses
 
             if (type == typeof(string))
             {
-                cell.SetCellValue(Convert.ToString(value) ?? string.Empty);
+                cell.SetCellValue(Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty);
                 return;
             }
 
             if (type == typeof(bool))
             {
-                cell.SetCellValue(Convert.ToBoolean(value));
+                cell.SetCellValue(Convert.ToBoolean(value, CultureInfo.InvariantCulture));
                 return;
             }
 
             if (type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(byte))
             {
-                cell.SetCellValue(Convert.ToDouble(value));
+                cell.SetCellValue(Convert.ToDouble(value, CultureInfo.InvariantCulture));
                 return;
             }
 
             if (type == typeof(double) || type == typeof(float) || type == typeof(decimal))
             {
-                cell.SetCellValue(Convert.ToDouble(value));
+                cell.SetCellValue(Convert.ToDouble(value, CultureInfo.InvariantCulture));
                 return;
             }
 
@@ -171,7 +172,7 @@ namespace FriendlyExcel.FunctionalClasses
                 return;
             }
 
-            cell.SetCellValue(Convert.ToString(value) ?? string.Empty);
+            cell.SetCellValue(Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty);
         }
 
         private static ICellStyle CreateDateStyle(IWorkbook workbook, string format)
