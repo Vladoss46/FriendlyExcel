@@ -106,6 +106,50 @@ namespace FriendlyExcel
         }
 
         /// <summary>
+        /// Reads a sheet into a list of POCOs. Column names map to property names
+        /// (case-insensitive) or to <see cref="ExcelColumnAttribute"/>.
+        /// </summary>
+        public static List<T> Get<T>(string filePath, ExcelReadOptions? options = null) where T : new()
+        {
+            options ??= new ExcelReadOptions { UseFirstRowAsColumnNames = true };
+            // POCO mapping uses headers; ColumnTypes come from T, not options.
+            ExcelReadOptions readOptions = new()
+            {
+                SheetIndex = options.SheetIndex,
+                SheetName = options.SheetName,
+                UseFirstRowAsColumnNames = options.UseFirstRowAsColumnNames,
+                Format = options.Format,
+                FileName = options.FileName,
+                ColumnTypes = null,
+            };
+
+            DataTable table = Get(filePath, readOptions);
+            return PocoMapper.FromTable<T>(table);
+        }
+
+        /// <summary>
+        /// Reads a sheet from a stream into a list of POCOs.
+        /// <see cref="ExcelReadOptions.Format"/> or <see cref="ExcelReadOptions.FileName"/> is required.
+        /// </summary>
+        public static List<T> Get<T>(Stream stream, ExcelReadOptions options) where T : new()
+        {
+            ArgumentNullException.ThrowIfNull(options);
+
+            ExcelReadOptions readOptions = new()
+            {
+                SheetIndex = options.SheetIndex,
+                SheetName = options.SheetName,
+                UseFirstRowAsColumnNames = options.UseFirstRowAsColumnNames,
+                Format = options.Format,
+                FileName = options.FileName,
+                ColumnTypes = null,
+            };
+
+            DataTable table = Get(stream, readOptions);
+            return PocoMapper.FromTable<T>(table);
+        }
+
+        /// <summary>
         /// Reads every sheet into an <see cref="XLBook"/>.
         /// </summary>
         /// <param name="filePath">Path to .xls or .xlsx file.</param>

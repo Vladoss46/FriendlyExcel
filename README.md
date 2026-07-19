@@ -96,12 +96,38 @@ ExcelWriter.SaveBook(ms, book, new ExcelWriteOptions
 
 Sheet names come from `DataTable.TableName` when set.
 
+## Read / write POCOs
+
+Map columns to properties by name (case-insensitive), or with `[ExcelColumn]`:
+
+```csharp
+public sealed class Employee
+{
+    [ExcelColumn("Имя")]
+    public string Name { get; set; } = "";
+
+    [ExcelColumn("Зарплата")]
+    public double Salary { get; set; }
+
+    public bool Active { get; set; } // column "Active"
+}
+
+List<Employee> people = ExcelReader.Get<Employee>("staff.xlsx");
+ExcelWriter.Save("staff-out.xlsx", people);
+
+using MemoryStream ms = new();
+ExcelWriter.Save(ms, people, ExcelFormat.Xlsx);
+ms.Position = 0;
+List<Employee> again = ExcelReader.Get<Employee>(ms, new ExcelReadOptions { Format = ExcelFormat.Xlsx });
+```
+
 ## Public API
 
 | Type | Role |
 |------|------|
-| `ExcelReader` | Read path/stream → `DataTable` / `XLBook` |
-| `ExcelWriter` | Write `DataTable` / `XLBook` → path/stream |
+| `ExcelReader` | Read path/stream → `DataTable`, `List<T>`, or `XLBook` |
+| `ExcelWriter` | Write `DataTable`, `IEnumerable<T>`, or `XLBook` → path/stream |
+| `ExcelColumnAttribute` | Map a property to an Excel column name |
 | `ExcelReadOptions` / `ExcelReadBookOptions` | Sheet index/name, headers, types, format |
 | `ExcelWriteOptions` | Headers, format |
 | `ExcelFormat` | `Xls` / `Xlsx` |

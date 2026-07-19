@@ -65,6 +65,42 @@ namespace FriendlyExcel
         }
 
         /// <summary>
+        /// Saves POCOs as a single sheet. Headers come from property names or <see cref="ExcelColumnAttribute"/>.
+        /// </summary>
+        public static void Save<T>(string filePath, IEnumerable<T> rows, ExcelWriteOptions? options = null)
+        {
+            ArgumentNullException.ThrowIfNull(rows);
+            options ??= new ExcelWriteOptions();
+
+            DataTable table = PocoMapper.ToTable(rows);
+            Save(filePath, table, options);
+        }
+
+        /// <summary>
+        /// Saves POCOs to a stream. <see cref="ExcelWriteOptions.Format"/> is required.
+        /// </summary>
+        public static void Save<T>(Stream stream, IEnumerable<T> rows, ExcelWriteOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(rows);
+            ArgumentNullException.ThrowIfNull(options);
+
+            DataTable table = PocoMapper.ToTable(rows);
+            Save(stream, table, options);
+        }
+
+        /// <summary>
+        /// Saves POCOs to a stream with an explicit format.
+        /// </summary>
+        public static void Save<T>(Stream stream, IEnumerable<T> rows, ExcelFormat format, bool writeColumnNames = true)
+        {
+            Save(stream, rows, new ExcelWriteOptions
+            {
+                Format = format,
+                WriteColumnNames = writeColumnNames,
+            });
+        }
+
+        /// <summary>
         /// Saves every sheet from the book into an Excel file.
         /// </summary>
         public static void SaveBook(string filePath, XLBook book, params bool[] writeColumnNames)
